@@ -41,6 +41,7 @@
   <div id="map"></div>
   <div id="info">---</div>
 
+  <!-- データ -->
   <script src="data.js"></script>
 
   <script>
@@ -51,7 +52,7 @@
       zoomControl: false
     });
 
-    // 黒背景タイル（強震モニタ風）
+    // 黒背景タイル
     L.tileLayer(
       'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       {
@@ -65,11 +66,13 @@
       document.getElementById("info").textContent =
         "更新 " + new Date().toLocaleTimeString();
 
-      // 既存点を削除
+      // 既存マーカー削除
       markers.forEach(m => map.removeLayer(m));
       markers = [];
 
-      // 疑似NIEDデータ描画
+      // ★ 毎回新しいデータを生成
+      const niedData = generateNiedData();
+
       niedData.forEach(p => {
         const intensity = pgaToIntensity(p.pga);
         const color = intensityToColor(intensity);
@@ -86,13 +89,13 @@
       });
     }
 
-    /* PGA → 震度相当（簡易） */
+    // PGA → 震度相当（簡易）
     function pgaToIntensity(pga) {
       if (pga <= 0) return 0;
       return 2.68 + 1.72 * Math.log10(pga);
     }
 
-    /* 震度 → 色 */
+    // 震度 → 色
     function intensityToColor(i) {
       if (i >= 6) return "#ff0000";
       if (i >= 5) return "#ff9900";
@@ -103,6 +106,7 @@
       return "#000000";
     }
 
+    // 初回＋5秒更新
     update();
     setInterval(update, 5000);
   </script>
