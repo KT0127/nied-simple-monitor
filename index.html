@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>NIED風 簡易強震モニタ</title>
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      background: black;
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+    #info {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      color: white;
+      background: rgba(0,0,0,0.6);
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-family: sans-serif;
+      font-size: 13px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="map"></div>
+  <div id="info">---</div>
+
+  <script src="data.js"></script>
+
+  <script>
+    // 地図初期化
+    const map = L.map('map', {
+      center: [36, 138],
+      zoom: 5,
+      zoomControl: false
+    });
+
+    // 黒背景タイル（強震モニタ風）
+    L.tileLayer(
+      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+      {
+        attribution: '© OpenStreetMap © CARTO'
+      }
+    ).addTo(map);
+
+    let markers = [];
+
+    function update() {
+      document.getElementById("info").textContent =
+        "更新 " + new Date().toLocaleTimeString();
+
+      // 既存点を削除
+      markers.forEach(m => map.removeLayer(m));
+      markers = [];
+
+      // 疑似NIEDデータ描画
+      niedData.forEach(p => {
+        const intensity = pgaToIntensity(p.pga);
+        const color = intensityToColor(intensity);
+
+        const marker = L.circleMarker([p.lat, p.lon], {
+          radius: 3 + intensity * 2,
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.9,
+          weight: 0
+        }).addTo(map);
+
+        markers.push(marker);
+      });
+    }
+
+    /* PGA → 震度相当（簡易） */
+    function pgaToIntensity(pga) {
+      if (pga <= 0) return 0;
+      return 2.68 + 1.72 * Math.log10(pga);
+    }
+
+    /* 震度 → 色 */
+    function intensityToColor(i) {
+      if (i >= 6) return "#ff0000";
+      if (i >= 5) return "#ff9900";
+      if (i >= 4) return "#ffff00";
+      if (i >= 3) return "#00ff66";
+      if (i >= 2) return "#00ccff";
+      if (i >= 1) return "#0066ff";
+      return "#000000";
+    }
+
+    update();
+    setInterval(update, 5000);
+  </script>
+</body>
+</html>
